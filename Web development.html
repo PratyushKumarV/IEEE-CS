@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tamil Nadu Information</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .info-card {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        #info-content {
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Tamil Nadu Information</h1>
+        <div class="info-card">
+            <div class="card-panel">
+                <h5 id="info-title">Fetching information...</h5>
+                <ul id="info-content"></ul>
+            </div>
+            <button class="btn" onclick="getTamilNaduInfo()">Get Information</button>
+        </div>
+    </div>
+
+    <script>
+        let startIndex = 0;
+        const chunkSize = 5;
+
+        function getTamilNaduInfo() {
+            fetch('https://en.wikipedia.org/api/rest_v1/page/html/Tamil_Nadu')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    // Extract the content between <p> tags to display only text content
+                    const parser = new DOMParser();
+                    const htmlDocument = parser.parseFromString(data, 'text/html');
+                    const paragraphs = htmlDocument.querySelectorAll('p');
+                    let fullContent = '';
+                    paragraphs.forEach(paragraph => {
+                        fullContent += `<li>${paragraph.textContent}</li>`;
+                    });
+                    const infoContentElement = document.getElementById('info-content');
+                    const contentList = fullContent.split('</li>').filter(item => item.trim() !== '');
+                    const endIndex = Math.min(startIndex + chunkSize, contentList.length);
+                    infoContentElement.innerHTML = '';
+                    for (let i = startIndex; i < endIndex; i++) {
+                        infoContentElement.innerHTML += contentList[i] + '</li>';
+                    }
+                    if (endIndex < contentList.length) {
+                        const remainingCount = contentList.length - endIndex;
+                        infoContentElement.innerHTML += `<button class="btn" onclick="showMore(${remainingCount})">Show More (${remainingCount})</button>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching information:', error);
+                    document.getElementById('info-title').innerText = 'Error fetching information. Please try again later.';
+                });
+        }
+
+        function showMore(remainingCount) {
+            startIndex += chunkSize;
+            getTamilNaduInfo();
+            if (remainingCount <= chunkSize) {
+                const showMoreButton = document.querySelector('#info-content button');
+                showMoreButton.parentNode.removeChild(showMoreButton);
+            }
+        }
+    </script>
+</body>
+
+</html>
